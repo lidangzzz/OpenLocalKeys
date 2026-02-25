@@ -1,0 +1,14 @@
+# Swift Package Manager
+.swiftpm/
+.build/
+
+# Xcode
+xcuserdata/
+*.xcworkspace
+!default.xcworkspace
+
+# macOS
+.DS_Store
+
+# Generated files
+*.dSYM
