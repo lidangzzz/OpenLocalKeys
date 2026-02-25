@@ -24,7 +24,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         contentViewController = NSHostingController(rootView: contentView)
         popover = NSPopover()
         popover?.contentViewController = contentViewController
-        popover?.contentSize = NSSize(width: 300, height: 400)
+        popover?.contentSize = NSSize(width: 500, height: 600)
 
         // Create the status bar item
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)

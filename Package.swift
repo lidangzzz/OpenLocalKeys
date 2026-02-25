@@ -15,7 +15,10 @@ let package = Package(
             path: "src",
             sources: [
                 "OpenLocalKeysApp.swift",
-                "ContentView.swift"
+                "ContentView.swift",
+                "Models/ApiKeyItem.swift",
+                "ViewModels/KeyManagerViewModel.swift",
+                "Views/ItemEditView.swift"
             ]
         )
     ]
