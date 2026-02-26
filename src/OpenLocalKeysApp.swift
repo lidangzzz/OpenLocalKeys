@@ -61,5 +61,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillResignActive(_ notification: Notification) {
         // Close popover when losing focus
         popover?.performClose(nil)
+        // Post notification to dismiss any open sheets
+        NotificationCenter.default.post(name: NSNotification.Name("PopoverWillClose"), object: nil)
     }
 }

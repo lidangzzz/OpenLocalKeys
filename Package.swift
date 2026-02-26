@@ -17,6 +17,7 @@ let package = Package(
                 "OpenLocalKeysApp.swift",
                 "ContentView.swift",
                 "Models/ApiKeyItem.swift",
+                "Models/Provider.swift",
                 "ViewModels/KeyManagerViewModel.swift",
                 "Views/ItemEditView.swift"
             ]
