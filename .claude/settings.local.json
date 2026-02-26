@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(swift build)"
+      "Bash(swift build)",
+      "Bash(cd SDK-js && npm install)",
+      "Bash(cd SDK-js && npm run build)",
+      "Bash(npm run build)",
+      "Bash(kill 2623)",
+      "Bash(kill -9 2623)",
+      "Bash(pkill -9 -f \"OpenLocalKeys\")",
+      "Bash(npm test)"
     ]
   }
 }

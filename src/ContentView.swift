@@ -1,12 +1,17 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var viewModel = KeyManagerViewModel()
+    @ObservedObject var viewModel: KeyManagerViewModel
     @State private var showingAddSheet = false
     @State private var editingItem: ApiKeyItem?
     @State private var confirmingDelete: ApiKeyItem?
     @State private var confirmingDeleteMultiple: Bool = false
     @State private var selectedItems: Set<UUID> = []
+
+    init() {
+        // Create a shared view model
+        _viewModel = ObservedObject(wrappedValue: KeyManagerViewModel.shared)
+    }
 
     var hasSelection: Bool {
         !selectedItems.isEmpty

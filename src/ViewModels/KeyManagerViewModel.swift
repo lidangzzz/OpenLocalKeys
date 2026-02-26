@@ -5,6 +5,8 @@ class KeyManagerViewModel: ObservableObject {
     @Published var items: [ApiKeyItem] = []
     private let userDefaultsKey = "ApiKeyItems"
 
+    static let shared = KeyManagerViewModel()
+
     init() {
         loadItems()
     }

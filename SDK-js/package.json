@@ -1,0 +1,33 @@
+{
+  "name": "openlocalkeys",
+  "version": "1.0.0",
+  "description": "SDK for requesting API keys from OpenLocalKeys macOS app",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "node dist/test.js"
+  },
+  "keywords": [
+    "api-keys",
+    "llm",
+    "openai",
+    "anthropic",
+    "macos",
+    "socket"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

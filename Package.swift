@@ -19,7 +19,9 @@ let package = Package(
                 "Models/ApiKeyItem.swift",
                 "Models/Provider.swift",
                 "ViewModels/KeyManagerViewModel.swift",
-                "Views/ItemEditView.swift"
+                "Views/ItemEditView.swift",
+                "Views/KeyRequestDialog.swift",
+                "Socket/SocketServer.swift"
             ]
         )
     ]
