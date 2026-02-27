@@ -18,6 +18,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var contentViewController: NSHostingController<ContentView>?
     var httpServer: HTTPServer?
     var keyRequestWindow: NSWindow?
+    private let viewModel: KeyManagerViewModel = KeyManagerViewModel.shared
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("OpenLocalKeys: applicationDidFinishLaunching called")
@@ -73,7 +74,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             button.target = self
         }
 
-        // Hide dock icon
+        // Hide dock icon (accessory mode)
         print("OpenLocalKeys: Setting activation policy to accessory...")
         NSApp.setActivationPolicy(.accessory)
         print("OpenLocalKeys: applicationDidFinishLaunching completed")
@@ -93,6 +94,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupSignalHandlers() {
         let signalHandler: @convention(c) (Int32) -> Void = { sig in
             print("OpenLocalKeys CRASH: Received signal \(sig)")
+            print("OpenLocalKeys CRASH: Stack trace:")
+            Thread.callStackSymbols.forEach { symbol in
+                print("  \(symbol)")
+            }
             exit(1)
         }
 
@@ -122,22 +127,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.post(name: NSNotification.Name("PopoverWillClose"), object: nil)
     }
 
+    @objc private func returnToAccessoryMode() {
+        print("OpenLocalKeys: Returning to accessory mode")
+        NSApp.setActivationPolicy(.accessory)
+    }
+
+    @objc private func closeRequestWindow() {
+        print("OpenLocalKeys: Hiding request window (delayed)")
+        keyRequestWindow?.orderOut(nil)
+        keyRequestWindow = nil
+        print("OpenLocalKeys: Window hidden")
+
+        // Schedule return to accessory mode
+        perform(#selector(returnToAccessoryMode), with: nil, afterDelay: 0.3)
+    }
+
     private func handleKeyRequest(_ request: HTTPRequest) {
         print("OpenLocalKeys: handleKeyRequest called")
         print("OpenLocalKeys: Path: \(request.path), Origin: \(request.origin ?? "none")")
 
-        // Activate app to bring it to front
+        // Activate app to bring it to front (keep it in regular mode for dialogs)
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
-
-        // Get the view model from content view
-        guard let contentView = contentViewController?.rootView as? ContentView else {
-            print("OpenLocalKeys Warning: Could not get ContentView, sending empty response")
-            request.respondEmpty()
-            return
-        }
-
-        let viewModel = contentView.viewModel
 
         // Get client origin information
         let clientOrigin = request.origin ?? "Unknown Application"
@@ -148,46 +159,53 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             clientOrigin: clientOrigin
         ) { [weak self] approved, items in
             guard let self = self else {
-                request.respondEmpty()
+                print("OpenLocalKeys: Warning - self is nil in callback")
                 return
             }
 
-            // Close the window
-            self.keyRequestWindow?.close()
-            self.keyRequestWindow = nil
+            print("OpenLocalKeys: Dialog callback - approved: \(approved), items: \(items.count)")
 
-            // Send the response
-            if approved {
-                let httpKeys = items.map { item -> HTTPApiKey in
-                    switch item.provider {
-                    case .custom(let name, let url):
-                        return HTTPApiKey(
-                            displayName: item.displayName,
-                            privateKey: item.privateKey,
-                            provider: item.provider.displayName,
-                            customProviderName: name,
-                            customProviderURL: url
-                        )
-                    default:
-                        return HTTPApiKey(
-                            displayName: item.displayName,
-                            privateKey: item.privateKey,
-                            provider: item.provider.displayName
-                        )
+            // Send the response on a background thread to avoid blocking UI
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                guard let self = self else { return }
+
+                if approved {
+                    let httpKeys = items.map { item -> HTTPApiKey in
+                        switch item.provider {
+                        case .custom(let name, let url):
+                            return HTTPApiKey(
+                                displayName: item.displayName,
+                                privateKey: item.privateKey,
+                                provider: item.provider.displayName,
+                                customProviderName: name,
+                                customProviderURL: url
+                            )
+                        default:
+                            return HTTPApiKey(
+                                displayName: item.displayName,
+                                privateKey: item.privateKey,
+                                provider: item.provider.displayName
+                            )
+                        }
                     }
+                    print("OpenLocalKeys: Sending response with \(httpKeys.count) keys")
+                    request.respond(with: httpKeys)
+                } else {
+                    print("OpenLocalKeys: Sending empty response (denied)")
+                    request.respondEmpty()
                 }
-                request.respond(with: httpKeys)
-            } else {
-                request.respondEmpty()
-            }
 
-            // Return to accessory mode
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                NSApp.setActivationPolicy(.accessory)
+                print("OpenLocalKeys: Request handling complete")
+
+                // Close window after delay to avoid deallocation during callback
+                DispatchQueue.main.async {
+                    self.perform(#selector(self.closeRequestWindow), with: nil, afterDelay: 0.1)
+                }
             }
         }
 
         // Create window
+        print("OpenLocalKeys: Creating dialog window")
         let hostingView = NSHostingView(rootView: dialog)
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
@@ -202,5 +220,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.level = .floating
 
         self.keyRequestWindow = window
+        print("OpenLocalKeys: Dialog window shown")
     }
 }

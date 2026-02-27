@@ -50,7 +50,27 @@
       "Bash(log show --predicate 'process == \"OpenLocalKeys\"' --last 2m --style compact 2>/dev/null | tail -30 || echo \"No recent logs found\")",
       "Bash(swift package clean && echo \"Build cleaned\")",
       "Bash(ps aux | grep OpenLocalKeys | grep -v grep | head -1 && echo \"---\" && lsof -i :8899 2>/dev/null || echo \"Port 8899 not listening\")",
-      "Bash(curl -X OPTIONS http://localhost:8899/keys -v 2>&1 | head -25)"
+      "Bash(curl -X OPTIONS http://localhost:8899/keys -v 2>&1 | head -25)",
+      "Bash(killall OpenLocalKeys 2>/dev/null || true\nsleep 1\necho \"Old server killed\")",
+      "Bash(curl -X POST http://localhost:8899/keys -H \"Content-Type: application/json\" -d '{}' -v 2>&1 | head -30)",
+      "Bash(killall OpenLocalKeys 2>/dev/null || true\nsleep 2)",
+      "Bash(lsof -i :8899 2>/dev/null)",
+      "Bash(curl -X POST http://localhost:8899/keys -H \"Content-Type: application/json\" -d '{}' --max-time 10 2>&1 | head -40)",
+      "Bash(ps aux | grep 49802 | grep -v grep && echo \"---\" && lsof -i :8899 2>/dev/null | grep LISTEN)",
+      "Bash(killall OpenLocalKeys 2>/dev/null || true\nsleep 1\nswift run OpenLocalKeys)",
+      "Bash(lsof -i :8899 2>/dev/null | grep LISTEN && echo \"Server is listening\" || echo \"Server not listening\")",
+      "Bash(ps aux | grep 74790 | grep -v grep && echo \"---\" && lsof -i :8899 2>/dev/null | grep LISTEN)",
+      "Bash(killall OpenLocalKeys 2>/dev/null || true\nsleep 2\nswift run OpenLocalKeys)",
+      "Bash(lsof -i :8899 2>/dev/null | grep LISTEN && echo \"✅ Server is still running - no crash!\")",
+      "Bash(sleep 5 && curl -X POST http://localhost:8899/keys -H \"Content-Type: application/json\" -d '{}' --max-time 5 2>&1 | head -20)",
+      "Bash(lsof -i :8899 2>/dev/null | grep LISTEN && echo \"✅ Server is still running!\")",
+      "Bash(sleep 6 && lsof -i :8899 2>/dev/null | grep LISTEN && echo \"Server is running, testing...\")",
+      "Bash(curl -X POST http://localhost:8899/keys -H \"Content-Type: application/json\" -d '{}' --max-time 10 2>&1 | head -20)",
+      "Bash(lsof -i :8899 2>/dev/null | grep LISTEN && echo \"✅✅✅ SERVER IS STILL RUNNING - NO CRASH! ✅✅✅\")",
+      "Bash(sleep 6 && curl -X POST http://localhost:8899/keys -H \"Content-Type: application/json\" -d '{}' --max-time 10 2>&1 | grep -E \"\\(displayName|HTTP.*1\\\\.\" | head -5)",
+      "Bash(curl -X POST http://localhost:8899/keys -H \"Content-Type: application/json\" -d '{}' --max-time 10 2>&1 | head -15)",
+      "Bash(lsof -i :8899 2>/dev/null | grep LISTEN && echo \"✅✅✅ SERVER IS STILL RUNNING! NO CRASH! ✅✅✅\" || echo \"Server crashed or not listening\")",
+      "Bash(lsof -i :8899 2>/dev/null | grep LISTEN && echo \"✅ SERVER IS STILL RUNNING AFTER SDK TEST - CRASH IS FIXED!\" || echo \"Server not running\")"
     ]
   }
 }

@@ -248,6 +248,7 @@ public class HTTPRequest: NSObject, @unchecked Sendable {
     public let body: Data?
     private let connection: NWConnection
     public let origin: String?
+    private let responseQueue = DispatchQueue(label: "com.openlocalkeys.httpresponse")
 
     init(
         method: HTTPMethod,
@@ -267,12 +268,14 @@ public class HTTPRequest: NSObject, @unchecked Sendable {
 
     /// Send a successful response with JSON data
     public func respond<T: Encodable>(with data: T) {
+        print("HTTPServer: respond() called, encoding data...")
         do {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted]
             let jsonData = try encoder.encode(data)
 
             guard let jsonString = String(data: jsonData, encoding: .utf8) else {
+                print("HTTPServer: Failed to convert JSON data to string")
                 sendErrorResponse(statusCode: 500, message: "Failed to encode response")
                 return
             }
@@ -286,27 +289,39 @@ public class HTTPRequest: NSObject, @unchecked Sendable {
             \(jsonString)
             """
 
+            print("HTTPServer: Sending response, size: \(jsonData.count) bytes")
+
             if let responseData = response.data(using: .utf8) {
-                connection.send(content: responseData, completion: .contentProcessed { [weak self] error in
-                    if let error = error {
-                        print("HTTPServer: Failed to send response: \(error)")
-                    }
-                    self?.connection.cancel()
-                })
+                responseQueue.async { [weak self] in
+                    guard let self = self else { return }
+                    self.connection.send(content: responseData, completion: .contentProcessed { error in
+                        if let error = error {
+                            print("HTTPServer: Failed to send response: \(error)")
+                        } else {
+                            print("HTTPServer: Response sent successfully")
+                        }
+                        self.connection.cancel()
+                    })
+                }
+            } else {
+                print("HTTPServer: Failed to convert response to data")
             }
         } catch {
+            print("HTTPServer: Failed to encode data: \(error.localizedDescription)")
             sendErrorResponse(statusCode: 500, message: "Failed to encode data: \(error.localizedDescription)")
         }
     }
 
     /// Send an empty response
     public func respondEmpty() {
+        print("HTTPServer: respondEmpty() called")
         let emptyArray: [String] = []
         respond(with: emptyArray)
     }
 
     /// Send an error response
     public func sendErrorResponse(statusCode: Int, message: String) {
+        print("HTTPServer: sendErrorResponse() called - \(statusCode): \(message)")
         let response = """
         HTTP/1.1 \(statusCode) Error\r
         Content-Type: application/json\r
@@ -316,9 +331,13 @@ public class HTTPRequest: NSObject, @unchecked Sendable {
         """
 
         if let responseData = response.data(using: .utf8) {
-            connection.send(content: responseData, completion: .contentProcessed { [weak self] _ in
-                self?.connection.cancel()
-            })
+            responseQueue.async { [weak self] in
+                guard let self = self else { return }
+                self.connection.send(content: responseData, completion: .contentProcessed { _ in
+                    print("HTTPServer: Error response sent")
+                    self.connection.cancel()
+                })
+            }
         }
     }
 }
