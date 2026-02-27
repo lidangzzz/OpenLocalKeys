@@ -7,67 +7,10 @@ let package = Package(
         .macOS(.v13)
     ],
     products: [
-        // Unix Socket Version
-        .library(name: "SocketServer", targets: ["SocketServer"]),
-        .executable(name: "OpenLocalKeys", targets: ["OpenLocalKeys"]),
-        .executable(name: "olkeys", targets: ["OLKeysClient"]),
-
-        // HTTP Version
-        .executable(name: "OpenLocalKeysHTTP", targets: ["OpenLocalKeysHTTP"])
+        .executable(name: "OpenLocalKeys", targets: ["OpenLocalKeysHTTP"])
     ],
     dependencies: [],
     targets: [
-        // MARK: - Unix Socket Version
-
-        // SocketServer Library
-        .target(
-            name: "SocketServer",
-            path: "src-unix-socket/SocketServer",
-            sources: [
-                "SocketServer.swift",
-                "SocketModels.swift"
-            ]
-        ),
-        .testTarget(
-            name: "SocketServerTests",
-            dependencies: ["SocketServer"],
-            path: "src-unix-socket/SocketServerTests"
-        ),
-
-        // OpenLocalKeys App (Unix Socket)
-        .executableTarget(
-            name: "OpenLocalKeys",
-            dependencies: ["SocketServer"],
-            path: "src-unix-socket/src",
-            sources: [
-                "OpenLocalKeysApp.swift",
-                "ContentView.swift",
-                "Models/ApiKeyItem.swift",
-                "Models/Provider.swift",
-                "ViewModels/KeyManagerViewModel.swift",
-                "Views/ItemEditView.swift",
-                "Views/KeyRequestDialog.swift"
-            ]
-        ),
-
-        // OLKeys CLI Client
-        .executableTarget(
-            name: "OLKeysClient",
-            dependencies: ["SocketServer"],
-            path: "src-unix-socket/CLI",
-            sources: [
-                "main.swift",
-                "SocketClient.swift"
-            ]
-        ),
-        .testTarget(
-            name: "OLKeysClientTests",
-            dependencies: ["OLKeysClient"],
-            path: "src-unix-socket/CLITests"
-        ),
-
-        // MARK: - HTTP Version
-
         // OpenLocalKeys App (HTTP) with embedded HTTPServer
         .executableTarget(
             name: "OpenLocalKeysHTTP",

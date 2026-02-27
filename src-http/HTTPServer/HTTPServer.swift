@@ -6,7 +6,7 @@ public final class HTTPServer: NSObject, ObservableObject, @unchecked Sendable {
     private var listener: NWListener?
     private let port: UInt16
     private var onIncomingRequest: ((HTTPRequest) -> Void)?
-    private let queue = DispatchQueue(label: "com.openlocalkeys.httpserver", attributes: .concurrent)
+    private let queue = DispatchQueue(label: "com.openlocalkeys.httpserver")
 
     public init(port: UInt16 = 8899) {
         self.port = port
@@ -22,21 +22,33 @@ public final class HTTPServer: NSObject, ObservableObject, @unchecked Sendable {
     /// Start the HTTP server
     /// - Parameter onIncomingRequest: Callback invoked when a new request arrives
     public func start(onIncomingRequest: @escaping (HTTPRequest) -> Void) {
+        print("HTTPServer: start() called")
         self.onIncomingRequest = onIncomingRequest
 
         // Create TCP listener on localhost
+        print("HTTPServer: Creating NWParameters...")
         let config = NWParameters.tcp
         config.allowLocalEndpointReuse = true
         config.allowFastOpen = true
 
         do {
-            listener = try NWListener(using: config, on: NWEndpoint.Port(rawValue: port)!)
+            print("HTTPServer: Creating NWListener on port \(self.port)...")
+            guard let port = NWEndpoint.Port(rawValue: port) else {
+                print("HTTPServer: Invalid port number: \(self.port)")
+                return
+            }
+
+            listener = try NWListener(using: config, on: port)
+            print("HTTPServer: NWListener created successfully")
+
             listener?.newConnectionHandler = { [weak self] connection in
                 self?.handleConnection(connection)
             }
+            print("HTTPServer: Connection handler set")
 
+            print("HTTPServer: Starting listener...")
             listener?.start(queue: queue)
-            print("HTTPServer: Listening on http://localhost:\(port)")
+            print("HTTPServer: Listener started, now listening on http://localhost:\(self.port)")
         } catch {
             print("HTTPServer: Failed to start listener: \(error)")
         }
@@ -62,9 +74,11 @@ public final class HTTPServer: NSObject, ObservableObject, @unchecked Sendable {
     // MARK: - Private Methods
 
     private func handleConnection(_ connection: NWConnection) {
+        print("HTTPServer: New connection received")
         connection.stateUpdateHandler = { state in
             switch state {
             case .ready:
+                print("HTTPServer: Connection ready, receiving request...")
                 self.receiveRequest(on: connection)
             case .failed(let error):
                 print("HTTPServer: Connection failed: \(error)")
@@ -83,21 +97,31 @@ public final class HTTPServer: NSObject, ObservableObject, @unchecked Sendable {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, isComplete, error in
             guard let self = self else { return }
 
+            if let error = error {
+                print("HTTPServer: Receive error: \(error)")
+                connection.cancel()
+                return
+            }
+
             if let data = data, !data.isEmpty {
                 self.processRequest(data: data, connection: connection)
             }
 
-            if isComplete || error != nil {
+            if isComplete {
+                print("HTTPServer: Connection complete")
                 connection.cancel()
             }
         }
     }
 
     private func processRequest(data: Data, connection: NWConnection) {
+        print("HTTPServer: Processing request, \(data.count) bytes received")
         guard let requestString = String(data: data, encoding: .utf8) else {
+            print("HTTPServer: Failed to decode request as UTF-8")
             sendErrorResponse(connection: connection, statusCode: 400, message: "Bad Request")
             return
         }
+        print("HTTPServer: Request string: \(requestString.prefix(200))...")
 
         // Parse HTTP request
         let lines = requestString.components(separatedBy: "\r\n")
@@ -160,8 +184,12 @@ public final class HTTPServer: NSObject, ObservableObject, @unchecked Sendable {
             origin: headers["Origin"] ?? headers["Referer"]
         )
 
+        print("HTTPServer: Request parsed successfully, dispatching to main thread")
+        print("HTTPServer: Method: \(method.rawValue), Path: \(path), Origin: \(request.origin ?? "none")")
+
         // Notify delegate on main thread
         DispatchQueue.main.async { [weak self] in
+            print("HTTPServer: Main thread callback executing")
             self?.onIncomingRequest?(request)
         }
     }

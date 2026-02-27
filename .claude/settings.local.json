@@ -39,7 +39,18 @@
       "Bash(defaults read OpenLocalKeysHTTP ApiKeyItems | xxd -r -p | python3 -c \"import sys, json; print\\(json.dumps\\(json.load\\(sys.stdin\\), indent=2\\)\\)\")",
       "Bash(python3 << 'EOF'\nimport plistlib\nimport json\n\nwith open\\('/Users/xinranwang/Library/Preferences/OpenLocalKeysHTTP.plist', 'rb'\\) as f:\n    plist = plistlib.load\\(f\\)\n    if 'ApiKeyItems' in plist:\n        data = plist['ApiKeyItems']\n        print\\(json.dumps\\(data, indent=2\\)\\)\nEOF)",
       "Bash(python3 << 'EOF'\nimport plistlib\nimport json\n\nwith open\\('/Users/xinranwang/Library/Preferences/OpenLocalKeysHTTP.plist', 'rb'\\) as f:\n    plist = plistlib.load\\(f\\)\n    if 'ApiKeyItems' in plist:\n        data = plist['ApiKeyItems']\n        # Decode bytes to string\n        json_str = data.decode\\('utf-8'\\)\n        print\\(json.dumps\\(json.loads\\(json_str\\), indent=2\\)\\)\nEOF)",
-      "Bash(npx tsx examples/simple-request.ts)"
+      "Bash(npx tsx examples/simple-request.ts)",
+      "Bash(curl -X OPTIONS http://localhost:8899/keys -v 2>&1 | head -20)",
+      "Bash(swift run OpenLocalKeys)",
+      "Bash(lsof -i :8899 | grep LISTE)",
+      "Bash(killall OpenLocalKeys 2>/dev/null || true)",
+      "Bash(lsof -p 3776 | grep -i tcp || echo \"No TCP connections found for PID 3776\")",
+      "Bash(kill 3776 2>/dev/null || true\nsleep 1)",
+      "Bash(timeout 8 swift run OpenLocalKeys 2>&1 || echo \"Exit code: $?\")",
+      "Bash(log show --predicate 'process == \"OpenLocalKeys\"' --last 2m --style compact 2>/dev/null | tail -30 || echo \"No recent logs found\")",
+      "Bash(swift package clean && echo \"Build cleaned\")",
+      "Bash(ps aux | grep OpenLocalKeys | grep -v grep | head -1 && echo \"---\" && lsof -i :8899 2>/dev/null || echo \"Port 8899 not listening\")",
+      "Bash(curl -X OPTIONS http://localhost:8899/keys -v 2>&1 | head -25)"
     ]
   }
 }

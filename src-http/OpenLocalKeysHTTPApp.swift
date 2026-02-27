@@ -1,6 +1,5 @@
 import SwiftUI
 import AppKit
-import HTTPServer
 
 @main
 struct OpenLocalKeysHTTPApp: App {
@@ -21,7 +20,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var keyRequestWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        print("OpenLocalKeys: applicationDidFinishLaunching called")
+
         // Set up global exception handler
+        print("OpenLocalKeys: Setting up exception handler...")
         NSSetUncaughtExceptionHandler { exception in
             print("OpenLocalKeys CRASH: Uncaught exception: \(exception)")
             print("Exception reason: \(exception.reason ?? "Unknown")")
@@ -29,40 +31,39 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Set up signal handlers
+        print("OpenLocalKeys: Setting up signal handlers...")
         setupSignalHandlers()
 
         // Start the HTTP server
-        do {
-            httpServer = HTTPServer(port: 8899)
-            httpServer?.start { [weak self] request in
-                guard let self = self else {
-                    print("OpenLocalKeys: Warning - self is nil, sending empty response")
-                    request.respondEmpty()
-                    return
-                }
-
-                // Handle the request
-                do {
-                    self.handleKeyRequest(request)
-                } catch {
-                    print("OpenLocalKeys Error: Failed to handle key request: \(error)")
-                    request.sendErrorResponse(statusCode: 500, message: "Internal server error")
-                }
+        print("OpenLocalKeys: Creating HTTPServer...")
+        httpServer = HTTPServer(port: 8899)
+        print("OpenLocalKeys: HTTPServer created, starting...")
+        httpServer?.start { [weak self] request in
+            guard let self = self else {
+                print("OpenLocalKeys: Warning - self is nil, sending empty response")
+                request.respondEmpty()
+                return
             }
 
-            print("OpenLocalKeys: HTTP server started successfully")
-        } catch {
-            print("OpenLocalKeys Error: Failed to start HTTP server: \(error)")
+            // Handle the request
+            self.handleKeyRequest(request)
         }
 
+        print("OpenLocalKeys: HTTP server started successfully")
+
         // Create the popover
+        print("OpenLocalKeys: Creating ContentView...")
         let contentView = ContentView()
+        print("OpenLocalKeys: Creating NSHostingController...")
         contentViewController = NSHostingController(rootView: contentView)
+        print("OpenLocalKeys: Creating NSPopover...")
         popover = NSPopover()
         popover?.contentViewController = contentViewController
         popover?.contentSize = NSSize(width: 500, height: 600)
+        print("OpenLocalKeys: Popover created")
 
         // Create the status bar item
+        print("OpenLocalKeys: Creating status bar item...")
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem?.button {
@@ -73,7 +74,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Hide dock icon
+        print("OpenLocalKeys: Setting activation policy to accessory...")
         NSApp.setActivationPolicy(.accessory)
+        print("OpenLocalKeys: applicationDidFinishLaunching completed")
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -120,6 +123,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func handleKeyRequest(_ request: HTTPRequest) {
+        print("OpenLocalKeys: handleKeyRequest called")
+        print("OpenLocalKeys: Path: \(request.path), Origin: \(request.origin ?? "none")")
+
         // Activate app to bring it to front
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
