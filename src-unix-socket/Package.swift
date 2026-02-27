@@ -7,22 +7,16 @@ let package = Package(
         .macOS(.v13)
     ],
     products: [
-        // Unix Socket Version
         .library(name: "SocketServer", targets: ["SocketServer"]),
         .executable(name: "OpenLocalKeys", targets: ["OpenLocalKeys"]),
-        .executable(name: "olkeys", targets: ["OLKeysClient"]),
-
-        // HTTP Version
-        .executable(name: "OpenLocalKeysHTTP", targets: ["OpenLocalKeysHTTP"])
+        .executable(name: "olkeys", targets: ["OLKeysClient"])
     ],
     dependencies: [],
     targets: [
-        // MARK: - Unix Socket Version
-
         // SocketServer Library
         .target(
             name: "SocketServer",
-            path: "src-unix-socket/SocketServer",
+            path: "SocketServer",
             sources: [
                 "SocketServer.swift",
                 "SocketModels.swift"
@@ -31,14 +25,14 @@ let package = Package(
         .testTarget(
             name: "SocketServerTests",
             dependencies: ["SocketServer"],
-            path: "src-unix-socket/SocketServerTests"
+            path: "SocketServerTests"
         ),
 
-        // OpenLocalKeys App (Unix Socket)
+        // OpenLocalKeys App
         .executableTarget(
             name: "OpenLocalKeys",
             dependencies: ["SocketServer"],
-            path: "src-unix-socket/src",
+            path: "src",
             sources: [
                 "OpenLocalKeysApp.swift",
                 "ContentView.swift",
@@ -54,7 +48,7 @@ let package = Package(
         .executableTarget(
             name: "OLKeysClient",
             dependencies: ["SocketServer"],
-            path: "src-unix-socket/CLI",
+            path: "CLI",
             sources: [
                 "main.swift",
                 "SocketClient.swift"
@@ -63,33 +57,7 @@ let package = Package(
         .testTarget(
             name: "OLKeysClientTests",
             dependencies: ["OLKeysClient"],
-            path: "src-unix-socket/CLITests"
-        ),
-
-        // MARK: - HTTP Version
-
-        // OpenLocalKeys App (HTTP) with embedded HTTPServer
-        .executableTarget(
-            name: "OpenLocalKeysHTTP",
-            dependencies: [],
-            path: "src-http",
-            exclude: [
-                "Views/KeyRequestDialog.swift",  // Unix socket version, uses SocketServer
-                "example.html",                // Test file
-                "README.md",                   // Documentation
-                "sdk-http.js"                  // JavaScript SDK
-            ],
-            sources: [
-                "OpenLocalKeysHTTPApp.swift",
-                "HTTPKeyRequestDialog.swift",
-                "ContentView.swift",
-                "Models/ApiKeyItem.swift",
-                "Models/Provider.swift",
-                "ViewModels/KeyManagerViewModel.swift",
-                "Views/ItemEditView.swift",
-                "HTTPServer/HTTPServer.swift",
-                "HTTPServer/HTTPModels.swift"
-            ]
+            path: "CLITests"
         )
     ]
 )

@@ -1,176 +1,224 @@
-# OpenLocalKeys
+# OpenLocalKeys - Multi-Protocol API Key Server
 
-A SwiftUI macOS Menu Bar App for managing LLM provider API keys.
+A macOS application that securely manages API keys and provides them to authorized applications through **two different protocols**.
 
-## Features
+## 🎯 Overview
 
-- **Add, Edit, Delete** API keys with an intuitive interface
-- **Multi-select** keys for bulk deletion
-- **Reorder** keys using up/down arrows to prioritize your most-used providers
-- **Show/Hide** sensitive keys with a toggle button
-- **Persistent storage** using UserDefaults (survives app restarts)
-- **Provider icons** automatically detected based on provider name
-- **Secure by design** - keys are masked by default with configurable visibility
-- **Unix Domain Socket Server** - Allow other applications to request API keys securely
+OpenLocalKeys runs as a menu bar application that:
+- Stores your API keys securely
+- Shows popup approval dialogs when apps request keys
+- Supports **Unix Domain Sockets** (for CLI/native apps)
+- Supports **HTTP** (for web apps and browsers)
 
-## Building and Running
+---
 
-### Using Swift Package Manager (SPM)
+## 📦 Two Versions
 
+### 1. Unix Socket Version (`OpenLocalKeys`)
+- **Protocol**: Unix Domain Socket
+- **Use Case**: CLI tools, native macOS apps
+- **Port**: Socket file at `/tmp/.../com.openlocalkeys.sock`
+- **Client**: `olkeys` CLI tool
+
+### 2. HTTP Version (`OpenLocalKeysHTTP`)
+- **Protocol**: HTTP on localhost
+- **Port**: 8899
+- **Use Case**: Web applications, browsers
+- **CORS**: Enabled for localhost
+
+---
+
+## 🚀 Quick Start
+
+### Run Unix Socket Version
 ```bash
-# Build the app
-swift build
-
-# Run the app
-swift run
+swift run OpenLocalKeys
 ```
 
-### Using Xcode (Recommended for development)
+### Run HTTP Version
+```bash
+swift run OpenLocalKeysHTTP
+```
 
-1. Open this directory in Xcode:
-   ```bash
-   open Package.swift
-   ```
+### Run CLI Client
+```bash
+swift run olkeys
+```
 
-2. Select the "OpenLocalKeys" scheme
-3. Press Cmd+R to build and run
+---
 
-## Project Structure
+## 📋 Comparison
+
+| Feature | Unix Socket | HTTP |
+|---------|-------------|------|
+| **Protocol** | Unix Domain Socket | HTTP/TCP |
+| **Address** | Socket file path | localhost:8899 |
+| **Best For** | CLI tools, native apps | Web apps, browsers |
+| **Client** | `olkeys` CLI | Any HTTP client |
+| **Browser Support** | ❌ No | ✅ Yes |
+| **Speed** | Faster | Slower (overhead) |
+
+---
+
+## 🛠️ Development
+
+### Build All
+```bash
+swift build
+```
+
+### Build Specific Target
+```bash
+swift build --target OpenLocalKeys      # Unix socket
+swift build --target OpenLocalKeysHTTP  # HTTP
+swift build --target olkeys             # CLI
+```
+
+### Run All
+```bash
+./run.sh app      # Unix socket version
+./run.sh http     # HTTP version
+./run.sh cli      # CLI client
+```
+
+---
+
+## 📁 Project Structure
 
 ```
 OpenLocalKeys/
-├── src/
-│   ├── OpenLocalKeysApp.swift    # Main app entry point and menu bar setup
-│   ├── ContentView.swift          # Main list view with CRUD operations
-│   ├── Models/
-│   │   ├── ApiKeyItem.swift       # Data model for API key items
-│   │   └── Provider.swift         # Provider enum with predefined providers
-│   ├── ViewModels/
-│   │   └── KeyManagerViewModel.swift  # Business logic and state management
-│   ├── Views/
-│   │   ├── ItemEditView.swift     # Add/Edit sheet for individual items
-│   │   └── KeyRequestDialog.swift # Socket request approval dialog
-│   └── Socket/
-│       └── SocketServer.swift     # Unix domain socket server
-├── SDK-js/                        # Node.js/TypeScript SDK
-│   ├── src/
-│   │   └── index.ts              # SDK source code
-│   ├── package.json              # NPM package configuration
-│   └── README.md                 # SDK documentation
-├── Package.swift                   # Swift Package Manager configuration
-└── README.md
+├── Package.swift
+├── run.sh                # Convenience script
+│
+├── src-unix-socket/      # Unix socket version
+│   ├── SocketServer/      # Library
+│   ├── src/               # App
+│   ├── CLI/               # CLI client
+│   └── SocketServerTests/
+│
+└── src-http/              # HTTP version
+    ├── HTTPServer/        # Embedded server
+    ├── OpenLocalKeysHTTPApp.swift
+    ├── HTTPKeyRequestDialog.swift
+    ├── Models/
+    ├── ViewModels/
+    ├── Views/
+    ├── README.md
+    ├── sdk-http.js        # JavaScript SDK
+    └── example.html       # Browser test
 ```
 
-## Usage
+---
 
-1. Click the **+** button to add a new API key
-2. Fill in the display name, provider name, and private key
-3. Click **Save** to store the key
-4. Use the **eye icon** to show/hide the full key
-5. Use **up/down arrows** to reorder items
-6. Click the **pencil icon** to edit or **trash icon** to delete
+## 💡 Usage Examples
 
-## Supported Providers
+### Unix Socket Client (CLI)
+```bash
+# Request keys
+olkeys
 
-The app automatically detects and shows appropriate icons for:
-- OpenAI
-- Anthropic
-- Google
-- Azure
-- Cohere
-- Hugging Face
-- Mistral
-- Replicate
-- And any custom providers (shows default key icon)
+# Get JSON output
+olkeys --json
 
-## Customization
-
-- **Status Bar Icon**: Change the `systemSymbolName` in `OpenLocalKeysApp.swift:34`
-- **Popover Size**: Modify `contentSize` in `OpenLocalKeysApp.swift:27`
-- **Masking Style**: Edit `maskedKey` property in `ApiKeyItem.swift`
-
-## Requirements
-
-- macOS 13.0+
-- Xcode 15.0+ or Swift 5.9+
-
-## Unix Domain Socket API
-
-OpenLocalKeys runs a Unix domain socket server that allows other applications to request API keys.
-
-**Socket Path:** `$TMPDIR/com.openlocalkeys.sock`
-
-On macOS, `$TMPDIR` typically resolves to something like `/var/folders/.../T/`. You can get the actual path by running `echo $TMPDIR` in Terminal.
-
-### How to Request Keys
-
-1. Connect to the socket at `$TMPDIR/com.openlocalkeys.sock`
-2. Send any message (e.g., "REQUEST_KEYS")
-3. Wait for user approval via popup dialog
-4. Receive JSON response with selected keys
-
-### Response Format
-
-```json
-[
-  {
-    "displayName": "My OpenAI Key",
-    "privateKey": "sk-...",
-    "provider": "OpenAI"
-  },
-  {
-    "displayName": "Custom Provider",
-    "privateKey": "custom-key",
-    "provider": "MyProvider",
-    "customProviderName": "MyProvider",
-    "customProviderURL": "https://api.example.com/v1"
-  }
-]
+# Check status
+olkeys --status
 ```
 
-### Example Client (Python)
+### HTTP Client (JavaScript)
+```javascript
+// From browser or Node.js
+const response = await fetch('http://localhost:8899/keys', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({})
+});
 
-```python
-import socket
-import json
-import os
-
-SOCK_PATH = os.path.join(os.environ.get('TMPDIR', '/tmp'), 'com.openlocalkeys.sock')
-
-def request_keys():
-    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    sock.connect(SOCK_PATH)
-    sock.send(b"REQUEST_KEYS")
-    response = sock.recv(4096)
-    sock.close()
-    return json.loads(response)
-
-keys = request_keys()
-for key in keys:
-    print(f"{key['displayName']}: {key['privateKey']}")
+const keys = await response.json();
 ```
 
-### Example Client (Bash)
+### HTTP Client (curl)
+```bash
+curl -X POST http://localhost:8899/keys
+```
+
+---
+
+## 🔐 Security
+
+- ✅ **Localhost Only** - No network exposure
+- ✅ **Manual Approval** - Every request requires user approval
+- ✅ **Multi-Select** - Choose which keys to share
+- ✅ **Audit Trail** - See which app requested keys
+- ✅ **No Persistence** - Approved per-session only
+
+---
+
+## 📚 Documentation
+
+- [Unix Socket Version README](src-unix-socket/README.md)
+- [HTTP Version README](src-http/README.md)
+- [JavaScript SDK](src-http/sdk-http.js)
+- [Example HTML Page](src-http/example.html)
+
+---
+
+## 🧪 Testing
 
 ```bash
-#!/bin/bash
-SOCK_PATH="${TMPDIR:-/tmp}/com.openlocalkeys.sock"
-echo "REQUEST_KEYS" | nc -U "$SOCK_PATH" | jq
+# Run all tests
+swift test
+
+# Run specific test suite
+swift test --filter SocketServerTests
+swift test --filter OLKeysClientTests
 ```
 
-### Node.js/TypeScript SDK
+---
 
-A Node.js SDK is available in the `SDK-js` folder for easy integration with JavaScript/TypeScript projects.
+## 🐛 Troubleshooting
 
+### "Multiple executable products available"
+You must specify which executable to run:
 ```bash
-# Install from local SDK-js directory
-npm install ./SDK-js
-
-# Or use directly in your project
-import { requestKeys } from 'openlocalkeys';
-
-const keys = await requestKeys();
-console.log(keys);
+swift run OpenLocalKeys       # Unix socket
+swift run OpenLocalKeysHTTP   # HTTP
+swift run olkeys              # CLI
 ```
 
-See `SDK-js/README.md` for full documentation.
+Or use the convenience script:
+```bash
+./run.sh http    # HTTP version
+./run.sh app     # Unix socket version
+```
+
+### HTTP Server Not Responding
+1. Check if the HTTP version is running: `./run.sh http`
+2. Verify port: `lsof -i :8899`
+3. Check browser console for CORS errors
+4. Make sure you're using `http://` not `https://`
+
+### Unix Socket Connection Failed
+1. Check if the Unix socket version is running: `./run.sh app`
+2. Verify socket file: `ls -la /tmp/com.openlocalkeys.sock`
+3. Use the CLI client to test: `./run.sh cli --status`
+
+---
+
+## 📝 License
+
+MIT License - See LICENSE file for details
+
+---
+
+## 🙏 Contributing
+
+Contributions welcome! Please feel free to submit issues or pull requests.
+
+---
+
+## 🎉 Summary
+
+Two protocols, one secure solution. Choose the version that fits your use case!
+
+- **CLI tools** → Unix Socket Version (`swift run OpenLocalKeys`)
+- **Web apps** → HTTP Version (`swift run OpenLocalKeysHTTP`)

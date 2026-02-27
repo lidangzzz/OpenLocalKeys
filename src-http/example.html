@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenLocalKeys HTTP Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .status.running {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.not-running {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #0051D5;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .keys-container {
+            margin-top: 20px;
+        }
+
+        .key-card {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .key-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .key-provider {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .key-value {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            word-break: break-all;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #bee5eb;
+            margin-bottom: 20px;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 OpenLocalKeys HTTP Test</h1>
+
+        <div id="status" class="status">
+            Checking server status...
+        </div>
+
+        <div class="info">
+            <strong>Note:</strong> Make sure the OpenLocalKeys HTTP server is running:
+            <br>
+            <code>swift run OpenLocalKeysHTTP</code>
+        </div>
+
+        <button id="requestKeysBtn" disabled>Request API Keys</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script src="sdk-http.js"></script>
+    <script>
+        const statusDiv = document.getElementById('status');
+        const resultDiv = document.getElementById('result');
+        const requestKeysBtn = document.getElementById('requestKeysBtn');
+
+        const client = new OpenLocalKeysHTTP('http://localhost:8899', {
+            timeout: 60000,
+            verbose: true
+        });
+
+        // Check server status on load
+        async function checkStatus() {
+            try {
+                const isRunning = await client.isServerRunning();
+                if (isRunning) {
+                    statusDiv.className = 'status running';
+                    statusDiv.textContent = '✅ Server is running on http://localhost:8899';
+                    requestKeysBtn.disabled = false;
+                } else {
+                    statusDiv.className = 'status not-running';
+                    statusDiv.textContent = '❌ Server is not running. Start it with: swift run OpenLocalKeysHTTP';
+                    requestKeysBtn.disabled = true;
+                }
+            } catch (error) {
+                statusDiv.className = 'status not-running';
+                statusDiv.textContent = `❌ Cannot connect to server: ${error.message}`;
+                requestKeysBtn.disabled = true;
+            }
+        }
+
+        // Request keys
+        async function requestKeys() {
+            requestKeysBtn.disabled = true;
+            requestKeysBtn.textContent = 'Waiting for approval...';
+
+            resultDiv.innerHTML = '<div class="loading">⏳ Please approve the request in the popup dialog...</div>';
+
+            try {
+                const keys = await client.requestKeys();
+
+                if (keys.length === 0) {
+                    resultDiv.innerHTML = '<div class="info">ℹ️ Request was denied or no keys are available.</div>';
+                } else {
+                    let html = '<div class="keys-container">';
+                    html += `<h3>Received ${keys.length} API Key(s):</h3>`;
+
+                    keys.forEach((key, index) => {
+                        html += `
+                            <div class="key-card">
+                                <div class="key-name">${index + 1}. ${escapeHtml(key.displayName)}</div>
+                                <div class="key-provider">Provider: ${escapeHtml(key.provider)}</div>
+                                <div class="key-value">${escapeHtml(key.privateKey)}</div>
+                            </div>
+                        `;
+                    });
+
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${escapeHtml(error.message)}</div>`;
+            }
+
+            requestKeysBtn.disabled = false;
+            requestKeysBtn.textContent = 'Request API Keys';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Event listeners
+        requestKeysBtn.addEventListener('click', requestKeys);
+
+        // Check status on load and every 5 seconds
+        checkStatus();
+        setInterval(checkStatus, 5000);
+    </script>
+</body>
+</html>

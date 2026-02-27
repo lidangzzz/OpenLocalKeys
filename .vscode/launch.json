@@ -19,6 +19,46 @@
       "target": "OpenLocalKeys",
       "configuration": "release",
       "preLaunchTask": "swift: Build Release OpenLocalKeys"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:OpenLocalKeys}",
+      "name": "Debug olkeys",
+      "target": "olkeys",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug olkeys"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:OpenLocalKeys}",
+      "name": "Release olkeys",
+      "target": "olkeys",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release olkeys"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:OpenLocalKeys}",
+      "name": "Debug OpenLocalKeysHTTP",
+      "target": "OpenLocalKeysHTTP",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug OpenLocalKeysHTTP"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:OpenLocalKeys}",
+      "name": "Release OpenLocalKeysHTTP",
+      "target": "OpenLocalKeysHTTP",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release OpenLocalKeysHTTP"
     }
   ]
 }

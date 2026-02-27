@@ -1,8 +1,9 @@
 import SwiftUI
+import SocketServer
 
 struct KeyRequestDialog: View {
     @ObservedObject var viewModel: KeyManagerViewModel
-    let request: SocketServer.SocketRequest
+    let request: SocketRequest
     @State private var selectedItems: Set<UUID> = []
     @State private var isProcessing = false
     let onRespond: (Bool, [ApiKeyItem]) -> Void
@@ -162,7 +163,7 @@ struct KeyRequestItemRow: View {
 #Preview {
     KeyRequestDialog(
         viewModel: KeyManagerViewModel(),
-        request: SocketServer.SocketRequest(clientPid: 1234, clientName: "Terminal") { _ in }
+        request: "http://localhost:3000"
     ) { approved, items in
         print("Approved: \(approved), Items: \(items)")
     }

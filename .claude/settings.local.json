@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "*",
       "Bash(swift build)",
       "Bash(cd SDK-js && npm install)",
       "Bash(cd SDK-js && npm run build)",
@@ -8,7 +9,37 @@
       "Bash(kill 2623)",
       "Bash(kill -9 2623)",
       "Bash(pkill -9 -f \"OpenLocalKeys\")",
-      "Bash(npm test)"
+      "Bash(npm test)",
+      "Bash(pkill -f \"OpenLocalKeys\")",
+      "Bash(swift test --filter SocketServerTests 2>&1)",
+      "Bash(swift test --filter testServerStart 2>&1 | grep -A 3 -B 3 \"testServerStart\")",
+      "Bash(swift run 2>&1 | head -20)",
+      "Bash(swift test --enable-test-discovery 2>&1)",
+      "Bash(swift test 2>&1 | grep -A 20 \"Test Suite\")",
+      "Bash(swift test 2>&1 | grep -A 5 \"Test Suite.*passed\")",
+      "Bash(swift test --build-tests 2>&1 | tail -30)",
+      "Bash(swift test 2>&1 | tail -40)",
+      "Bash(swift test 2>&1 | tail -30)",
+      "Bash(swift test 2>&1 | grep -A 10 \"Test Suite.*passed\")",
+      "Bash(chmod +x /Users/xinranwang/Documents/GitHub/OpenLocalKeys/run.sh)",
+      "Bash(cp /Users/xinranwang/Documents/GitHub/OpenLocalKeys/src-unix-socket/src/ContentView.swift /Users/xinranwang/Documents/GitHub/OpenLocalKeys/src-http/ && cp -r /Users/xinranwang/Documents/GitHub/OpenLocalKeys/src-unix-socket/src/Models /Users/xinranwang/Documents/GitHub/OpenLocalKeys/src-http/ && cp -r /Users/xinranwang/Documents/GitHub/OpenLocalKeys/src-unix-socket/src/ViewModels /Users/xinranwang/Documents/GitHub/OpenLocalKeys/src-http/ && cp -r /Users/xinranwang/Documents/GitHub/OpenLocalKeys/src-unix-socket/src/Views /Users/xinranwang/Documents/GitHub/OpenLocalKeys/src-http/)",
+      "Bash(timeout 60 swift build 2>&1; echo \"Exit code: $?\")",
+      "Bash(swift build --target OpenLocalKeysHTTP 2>&1 | tail -20)",
+      "Bash(swift build --target OpenLocalKeysHTTP 2>&1 | tail -10)",
+      "Bash(swift build --target OpenLocalKeysHTTP 2>&1 | tail -5)",
+      "Bash(swift build --target OpenLocalKeysHTTP 2>&1 | grep -E \"\\(error|Build complete|complete\\)\" | tail -3)",
+      "Bash(cd /Users/xinranwang/Documents/GitHub/OpenLocalKeys/src-http-sdk-js && npm install 2>&1 | tail -10)",
+      "Bash(npx tsx examples/basic-usage.ts)",
+      "Bash(lsof -i :8899 | grep LISTEN)",
+      "Bash(sleep 5 && lsof -i :8899)",
+      "Bash(defaults read com.xinranwang.OpenLocalKeys)",
+      "Bash(plutil -p /Users/xinranwang/Library/Preferences/OpenLocalKeysHTTP.plist)",
+      "Bash(defaults read OpenLocalKeysHTTP ApiKeyItems 2>/dev/null | python3 -m json.tool)",
+      "Bash(defaults read OpenLocalKeysHTTP ApiKeyItems)",
+      "Bash(defaults read OpenLocalKeysHTTP ApiKeyItems | xxd -r -p | python3 -c \"import sys, json; print\\(json.dumps\\(json.load\\(sys.stdin\\), indent=2\\)\\)\")",
+      "Bash(python3 << 'EOF'\nimport plistlib\nimport json\n\nwith open\\('/Users/xinranwang/Library/Preferences/OpenLocalKeysHTTP.plist', 'rb'\\) as f:\n    plist = plistlib.load\\(f\\)\n    if 'ApiKeyItems' in plist:\n        data = plist['ApiKeyItems']\n        print\\(json.dumps\\(data, indent=2\\)\\)\nEOF)",
+      "Bash(python3 << 'EOF'\nimport plistlib\nimport json\n\nwith open\\('/Users/xinranwang/Library/Preferences/OpenLocalKeysHTTP.plist', 'rb'\\) as f:\n    plist = plistlib.load\\(f\\)\n    if 'ApiKeyItems' in plist:\n        data = plist['ApiKeyItems']\n        # Decode bytes to string\n        json_str = data.decode\\('utf-8'\\)\n        print\\(json.dumps\\(json.loads\\(json_str\\), indent=2\\)\\)\nEOF)",
+      "Bash(npx tsx examples/simple-request.ts)"
     ]
   }
 }
