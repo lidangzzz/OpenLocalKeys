@@ -85,7 +85,7 @@ func printUsage() {
     OPTIONS:
         -h, --help          Show this help message
         -s, --status        Check if OpenLocalKeys server is running
-        -p, --path <path>   Custom socket path (default: /tmp/.../com.openlocalkeys.sock)
+        -p, --path <path>   Custom socket path (default: /tmp/com.openlocalkeys.sock)
         -j, --json          Output results as JSON
 
     EXAMPLES:

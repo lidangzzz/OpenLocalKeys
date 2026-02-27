@@ -9,11 +9,8 @@ public struct SocketClient {
         if let path = socketPath {
             self.socketPath = path
         } else {
-            // Use the default socket path
-            let tempDir = NSTemporaryDirectory()
-            self.socketPath = tempDir.hasSuffix("/")
-                ? "\(tempDir)com.openlocalkeys.sock"
-                : "\(tempDir)/com.openlocalkeys.sock"
+            // Use the default socket path (same as server)
+            self.socketPath = SocketServer.defaultSocketPath
         }
     }
 

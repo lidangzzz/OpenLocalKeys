@@ -2,6 +2,9 @@ import Foundation
 
 /// A Unix domain socket server that handles incoming API key requests
 public final class SocketServer: NSObject, ObservableObject, @unchecked Sendable {
+    /// Default socket path used by the server
+    public static let defaultSocketPath = "/tmp/com.openlocalkeys.sock"
+
     private var listenSocket: Int32 = -1
     private var runSource: DispatchSourceRead?
     private let socketPath: String
@@ -9,10 +12,8 @@ public final class SocketServer: NSObject, ObservableObject, @unchecked Sendable
     private let queue = DispatchQueue(label: "com.openlocalkeys.socketserver", attributes: .concurrent)
 
     public override init() {
-        let tempDir = NSTemporaryDirectory()
-        self.socketPath = tempDir.hasSuffix("/")
-            ? "\(tempDir)com.openlocalkeys.sock"
-            : "\(tempDir)/com.openlocalkeys.sock"
+        // Use /tmp for a consistent, predictable path that clients can find
+        self.socketPath = Self.defaultSocketPath
         super.init()
     }
 
@@ -83,6 +84,7 @@ public final class SocketServer: NSObject, ObservableObject, @unchecked Sendable
         }
 
         print("SocketServer: Listening at \(socketPath)")
+        print("SocketServer: Socket path for clients: \(socketPath)")
 
         // Set up dispatch source for incoming connections
         runSource = DispatchSource.makeReadSource(
@@ -207,8 +209,14 @@ public final class SocketServer: NSObject, ObservableObject, @unchecked Sendable
                     clientName: clientName,
                     socketFd: socketFd,
                     closeCallback: closeCallback,
-                    callback: { [unowned self, socketFd] selectedItems in
+                    callback: { [weak self, socketFd] selectedItems in
                         // Create response data on main thread
+                        guard let self = self else {
+                            print("SocketServer: Warning - SocketServer was deallocated before callback, cannot send response")
+                            close(socketFd)
+                            return
+                        }
+
                         let jsonData: Data
                         do {
                             jsonData = try self.createResponseData(items: selectedItems)
@@ -219,7 +227,7 @@ public final class SocketServer: NSObject, ObservableObject, @unchecked Sendable
                                 jsonData = try JSONEncoder().encode([SocketApiKey]())
                             } catch {
                                 print("SocketServer: Critical error - cannot create empty response")
-                                // Note: Socket will be closed by app via request.closeSocket()
+                                close(socketFd)
                                 return
                             }
                         }

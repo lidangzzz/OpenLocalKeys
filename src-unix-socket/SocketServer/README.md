@@ -5,6 +5,7 @@ A lightweight Unix domain socket server library for macOS applications. This lib
 ## Features
 
 - Unix domain socket communication
+- Default socket path at `/tmp/com.openlocalkeys.sock`
 - Automatic client PID detection on macOS
 - Thread-safe request handling
 - Swift Concurrency support (`@Sendable`, `Sendable`)
@@ -93,15 +94,19 @@ The server sends responses as JSON arrays:
 
 ## Client Example
 
-See the `SDK-js` directory for a Node.js client example:
+See the `src-socket-sdk-js` directory for a Node.js client example:
 
 ```javascript
-import { OpenLocalKeys } from 'openlocalkeys';
+import { OpenLocalKeys } from 'openlocalkeys-socket-sdk';
 
-const client = new OpenLocalKeys();
+const client = new OpenLocalKeys({
+  socketPath: '/tmp/com.openlocalkeys.sock'  // Default path
+});
 const keys = await client.requestKeys();
 console.log(keys);
 ```
+
+**Default Socket Path**: The server uses `/tmp/com.openlocalkeys.sock` by default. Clients should connect to this path unless a custom path is specified.
 
 ## Thread Safety
 
